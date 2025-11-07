@@ -43,7 +43,7 @@ public final class PendulumPanel extends JPanel {
     private boolean cameraFollow = false;
     private boolean tracing = false;
 
-    private final Pendulum pendulum = new Pendulum(200, 10, 0, 0, Math.PI / 4, 1);
+    private final Pendulum pendulum = new Pendulum(200, 10, 0, 0, Math.PI / 4, 0);
     private final List<TrailPoint> trail = new ArrayList<>();
 
     // ----------------------------
@@ -51,6 +51,7 @@ public final class PendulumPanel extends JPanel {
     // ----------------------------
     private final List<Button> buttons = new ArrayList<>();
     private final List<Button> tabButtons = new ArrayList<>();
+    private int buttonSelected = 0;
 
     // ----------------------------
     // Mouse & drag state
@@ -95,12 +96,9 @@ public final class PendulumPanel extends JPanel {
         int buttonWidth = 130;
         int buttonHeight = 60;
         int spacing = 20;
-        int marginRight = 1900;
+        int marginRight = 1300;
         int baseY = 50;
-
-        // Calculate starting X position for the rightmost button (Trace)
-        int totalWidth = (buttonWidth + spacing) * 4 - spacing;
-        int baseX = getWidth() - totalWidth + marginRight;
+        int baseX = marginRight;
 
         // Stop / Start button
         Button stopButton = new Button(baseX, baseY, buttonWidth, buttonHeight, "STOP", Colors.STOP_RED.toColor(), 1);
@@ -116,6 +114,11 @@ public final class PendulumPanel extends JPanel {
         resetButton.setOnClick(() -> {
             pendulum.reset();
             trail.clear();
+
+            time = 0;
+            cameraDiffX = 0;
+            cameraDiffY = 0;
+
             if (cameraFollow) follow();
         });
         buttons.add(resetButton);
@@ -134,6 +137,21 @@ public final class PendulumPanel extends JPanel {
     public void setUpTabButton() {
         tabButtons.clear();
         tabButtons.addAll(DataSet.createTabButtons(pendulum.getPendulumData()));
+        for(int i = 0; i < tabButtons.size();i++){
+            Button b = tabButtons.get(i);
+            int buttonIndex = i;
+            b.setOnClick(()-> {
+            buttonSelected = buttonIndex;
+            updateTabButtons();
+            });
+        }
+    }
+
+    private void updateTabButtons(){
+        for(int i = 0; i < tabButtons.size();i++){
+                Button b = tabButtons.get(i);
+                b.setButtonColor(buttonSelected != i ? Colors.TAB.toColor() : Colors.TAB_SELECTED.toColor());
+            }
     }
 
     private void setupMouseHandlers() {
