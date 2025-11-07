@@ -9,6 +9,7 @@ public enum Colors {
     FOLLOW(new Color(0, 123, 255)),
     TRACE(new Color(138, 43, 226)),
     TAB(new Color(138, 43, 226)),
+    TAB_SELECTED(new Color(250,200,0)),
     ;
 
     private final Color color;
