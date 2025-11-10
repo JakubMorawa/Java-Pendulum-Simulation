@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit;
 import javax.swing.*;
 
 public final class PendulumPanel extends JPanel {
-
+    
     // ----------------------------
     // Constants
     // ----------------------------
@@ -19,45 +19,65 @@ public final class PendulumPanel extends JPanel {
     private static final int SIM_BORDER_STROKE = 5;
     private static final int SIM_SPACING = 50;
     private static final int RESIZE_THRESHOLD = 1800;
-
+    
     // ----------------------------
     // Simulation size & camera
     // ----------------------------
     private static int SIM_WIDTH = 1200;
     private static int SIM_HEIGHT = 1200;
-
     private static int simCameraX, simCameraY;
     private static int cameraDiffX = 0, cameraDiffY = 0;
     private static int cameraCenterX, cameraCenterY;
-
-    public static void setSIM_HEIGHT(int SIM_HEIGHT) { PendulumPanel.SIM_HEIGHT = SIM_HEIGHT; }
-    public static void setSIM_WIDTH(int SIM_WIDTH) { PendulumPanel.SIM_WIDTH = SIM_WIDTH; }
-
+    
+    public static void setSIM_HEIGHT(int SIM_HEIGHT) {
+        PendulumPanel.SIM_HEIGHT = SIM_HEIGHT;
+    }
+    
+    public static void setSIM_WIDTH(int SIM_WIDTH) {
+        PendulumPanel.SIM_WIDTH = SIM_WIDTH;
+    }
+    
     // ----------------------------
     // Simulation & state
     // ----------------------------
     private static double time = 0;
-    public static double getTime() { return time; }
-
+    
+    public static double getTime() {
+        return time;
+    }
+    
     private boolean isRunning = true;
     private boolean cameraFollow = false;
     private boolean tracing = false;
-
-    private final Pendulum pendulum = new Pendulum(200, 10, 0, 0, Math.PI / 4, 1);
+    
+    private final Pendulum pendulum = new Pendulum(200, 10, 0, 0, Math.PI / 4, 0);
     private final List<TrailPoint> trail = new ArrayList<>();
-
+    
     // ----------------------------
-    // Buttons
+    // Buttons & Text Field
     // ----------------------------
     private final List<Button> buttons = new ArrayList<>();
     private final List<Button> tabButtons = new ArrayList<>();
+    private int buttonSelected = 0;
+    private int buttonNameIndexSelected = 0;
+    private double userValue = 0; // Parsed value
+    private List<DataElement> dataElements = pendulum.getPendulumData();
+    private JTextField textField = new JTextField();
+
+    {
+        for (int i = 0; i < dataElements.size(); i++) {
+            if (dataElements.get(i).isChangeable()) {
+                buttonNameIndexSelected = i;
+                break;
+            }
+        }
+    }
 
     // ----------------------------
     // Mouse & drag state
     // ----------------------------
     private boolean mouseInSimBox = false;
     private boolean mousePressedInSimBox = false;
-
     private int mouseLastX, mouseLastY;
     private int mouseCurrentX, mouseCurrentY;
     private int cameraOffsetAtPressX, cameraOffsetAtPressY;
@@ -72,6 +92,7 @@ public final class PendulumPanel extends JPanel {
         setupButtons();
         setUpTabButton();
         startMainLoop();
+        makeTextField();
 
         this.addComponentListener(new ComponentAdapter() {
             @Override
@@ -79,6 +100,66 @@ public final class PendulumPanel extends JPanel {
                 updateSimSize();
             }
         });
+    }
+
+    private void makeTextField() {
+        setLayout(null);
+
+        // Create text field
+        textField = new JTextField();
+        textField.setBounds(1605, 150, 150, 40);
+        textField.setFont(new Font("Arial", Font.PLAIN, 16));
+        textField.setHorizontalAlignment(JTextField.CENTER);
+        textField.setBackground(Color.WHITE);
+
+        // Focus listener (changes color when active)
+        textField.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                textField.setBackground(Colors.ACTIVE.toColor()); // light blue
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                textField.setBackground(Color.WHITE);
+            }
+        });
+
+        add(textField);
+
+        // Common parsing logic in a lambda
+        Runnable parseInput = () -> {
+            String text = textField.getText().trim();
+            try {
+                userValue = Double.parseDouble(text);
+
+                switch (buttonSelected) {
+                    case 0 -> pendulum.setLength(userValue);
+                    case 1 -> pendulum.setMass(userValue);
+                    case 2 -> pendulum.setPivotX(userValue);
+                    case 3 -> pendulum.setPivotY(userValue);
+                    case 4 -> pendulum.setAngle(userValue);
+                    case 5 -> pendulum.setInitialAngle(userValue);
+                    case 6 -> pendulum.setAngularVelocity(userValue);
+                    case 7 -> pendulum.setInitialAngularVelocity(userValue);
+                    default -> {}
+                }
+
+                textField.setBackground(Color.WHITE); // optional: reset color on success
+                PendulumPanel.this.requestFocusInWindow(); // remove focus from text field
+
+            } catch (NumberFormatException ex) {
+                textField.setBackground(Colors.ERROR.toColor()); // light red
+            }
+        };
+
+        // Create "SET" button
+        Button setButton = new Button(1760, 150, 70, 40, "SET", Colors.SET.toColor(), 1, 2, 20);
+        setButton.setOnClick(parseInput);
+        buttons.add(setButton);
+
+        // Trigger same logic when Enter is pressed in the text field
+        textField.addActionListener(e -> parseInput.run());
     }
 
     // ----------------------------
@@ -95,15 +176,14 @@ public final class PendulumPanel extends JPanel {
         int buttonWidth = 130;
         int buttonHeight = 60;
         int spacing = 20;
-        int marginRight = 1900;
+        int marginRight = 1300;
         int baseY = 50;
-
-        // Calculate starting X position for the rightmost button (Trace)
-        int totalWidth = (buttonWidth + spacing) * 4 - spacing;
-        int baseX = getWidth() - totalWidth + marginRight;
+        int baseX = marginRight;
+        int topButtonBorder = 3;
+        int topButtonFontSize = 30;
 
         // Stop / Start button
-        Button stopButton = new Button(baseX, baseY, buttonWidth, buttonHeight, "STOP", Colors.STOP_RED.toColor(), 1);
+        Button stopButton = new Button(baseX, baseY, buttonWidth, buttonHeight, "STOP", Colors.STOP_RED.toColor(), 1, topButtonBorder, topButtonFontSize);
         stopButton.setOnClick(() -> {
             isRunning = !isRunning;
             stopButton.setButtonColor(isRunning ? Colors.STOP_RED.toColor() : Colors.GO_GREEN.toColor());
@@ -112,28 +192,63 @@ public final class PendulumPanel extends JPanel {
         buttons.add(stopButton);
 
         // Reset button
-        Button resetButton = new Button(baseX + (buttonWidth + spacing), baseY, buttonWidth, buttonHeight, "Reset", Colors.RESET.toColor(), 1);
+        Button resetButton = new Button(baseX + (buttonWidth + spacing), baseY, buttonWidth, buttonHeight, "Reset", Colors.RESET.toColor(), 1, topButtonBorder, topButtonFontSize);
         resetButton.setOnClick(() -> {
             pendulum.reset();
             trail.clear();
+            time = 0;
+            cameraDiffX = 0;
+            cameraDiffY = 0;
             if (cameraFollow) follow();
         });
         buttons.add(resetButton);
 
         // Follow button
-        Button followButton = new Button(baseX + 2 * (buttonWidth + spacing), baseY, buttonWidth, buttonHeight, "Follow", Colors.FOLLOW.toColor(), 1);
+        Button followButton = new Button(baseX + 2 * (buttonWidth + spacing), baseY, buttonWidth, buttonHeight, "Follow", Colors.FOLLOW.toColor(), 1, topButtonBorder, topButtonFontSize);
         followButton.setOnClick(() -> cameraFollow = !cameraFollow);
         buttons.add(followButton);
 
         // Trace button
-        Button traceButton = new Button(baseX + 3 * (buttonWidth + spacing), baseY, buttonWidth, buttonHeight, "Trace", Colors.TRACE.toColor(), 1);
+        Button traceButton = new Button(baseX + 3 * (buttonWidth + spacing), baseY, buttonWidth, buttonHeight, "Trace", Colors.TRACE.toColor(), 1, topButtonBorder, topButtonFontSize);
         traceButton.setOnClick(() -> tracing = !tracing);
         buttons.add(traceButton);
     }
 
-    public void setUpTabButton() {
+    private void setUpTabButton() {
         tabButtons.clear();
         tabButtons.addAll(DataSet.createTabButtons(pendulum.getPendulumData()));
+
+        for (int i = 0; i < tabButtons.size(); i++) {
+            Button b = tabButtons.get(i);
+            int changeableElementIndex = 0;
+            int elementIndex = 0;
+            for (int j = 0; j < pendulum.getPendulumData().size(); j++) {
+                if (pendulum.getPendulumData().get(j).isChangeable()) {
+                    if (changeableElementIndex == i) {
+                        elementIndex = j;
+                        break;
+                    }
+                    changeableElementIndex++;
+                }
+            }
+
+            int buttonNameIndex = elementIndex;
+            int buttonIndex = i;
+            b.setOnClick(() -> {
+                buttonNameIndexSelected = buttonNameIndex;
+                buttonSelected = buttonIndex;
+                updateTabButtons();
+            });
+        }
+        updateTabButtons();
+    }
+
+    private void updateTabButtons() {
+        for (int i = 0; i < tabButtons.size(); i++) {
+            Button b = tabButtons.get(i);
+            b.setButtonColor(buttonSelected != i ? Colors.TAB.toColor() : Colors.TAB_SELECTED.toColor());
+        }
+        
     }
 
     private void setupMouseHandlers() {
@@ -151,6 +266,7 @@ public final class PendulumPanel extends JPanel {
                 repaint();
             }
         };
+
         addMouseListener(mouseHandler);
         addMouseMotionListener(mouseHandler);
     }
@@ -170,19 +286,15 @@ public final class PendulumPanel extends JPanel {
         if (isRunning) pendulum.update(0.16);
         time += 0.16;
 
-        if (cameraFollow) {
-            follow();
-        } else {
+        if (cameraFollow) follow();
+        else {
             simCameraX = cameraCenterX + cameraDiffX;
             simCameraY = cameraCenterY + cameraDiffY;
         }
 
         trail.add(new TrailPoint(pendulum.getBobX(), pendulum.getBobY(), time));
-        
-        int TrailLimit = 1000;
-        if(trail.size() > TrailLimit){
-            trail.remove(0);
-        }
+        int TrailLimit = 500;
+        if (trail.size() > TrailLimit) trail.remove(0);
     }
 
     public void follow() {
@@ -203,6 +315,7 @@ public final class PendulumPanel extends JPanel {
             int newSize = Math.min(panelWidth, panelHeight);
             SIM_WIDTH = SIM_HEIGHT = (int) (newSize * 0.7);
         }
+
         repaint();
     }
 
@@ -214,35 +327,33 @@ public final class PendulumPanel extends JPanel {
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g;
 
-        drawBackground(g);
+        drawbackground(g);
         drawFullPanelVignette(g2);
 
-        drawSimBox(g);
-        drawGrid(g);
+        Utils.drawSquare(g2, CORNER_X, CORNER_Y, SIM_WIDTH, SIM_HEIGHT, Color.WHITE, SIM_BORDER_STROKE);//draw sim box
+        drawInsideSimBox(g2);
 
-        Shape oldClip = g2.getClip();
-        g2.setClip(CORNER_X, CORNER_Y, SIM_WIDTH, SIM_HEIGHT);
-
-        if (tracing) drawTrailLine(g2);
-        pendulum.draw(g, simCameraX, simCameraY);
-
-        g2.setClip(oldClip);
         drawButtons(g2);
-
         DataSet.drawDataSet(g, pendulum.getPendulumData());
+
+        String variableNameSelected = pendulum.getPendulumData().get(buttonNameIndexSelected).getVariableName();
+        drawTextFieldName(g2, 1300, 150, 300,40, variableNameSelected);
     }
 
-    private void drawBackground(Graphics g) {
+    private void drawbackground(Graphics g) {
         g.setColor(new Color(200, 30, 100));
         g.fillRect(0, 0, getWidth(), getHeight());
     }
 
-    private void drawSimBox(Graphics g) {
-        g.setColor(Color.BLACK);
-        g.fillRect(CORNER_X - SIM_BORDER_STROKE, CORNER_Y - SIM_BORDER_STROKE,
-                   SIM_WIDTH + 2 * SIM_BORDER_STROKE, SIM_HEIGHT + 2 * SIM_BORDER_STROKE);
-        g.setColor(Color.WHITE);
-        g.fillRect(CORNER_X, CORNER_Y, SIM_WIDTH, SIM_HEIGHT);
+    private void drawInsideSimBox(Graphics2D g2) {
+        Shape oldClip = g2.getClip();
+        g2.setClip(CORNER_X, CORNER_Y, SIM_WIDTH, SIM_HEIGHT);
+
+        drawGrid(g2);
+        if (tracing) drawTrailLine(g2);
+        pendulum.draw(g2, simCameraX, simCameraY);
+
+        g2.setClip(oldClip);
     }
 
     private void drawGrid(Graphics g) {
@@ -258,33 +369,24 @@ public final class PendulumPanel extends JPanel {
             g.drawLine(CORNER_X, y, CORNER_X + SIM_WIDTH, y);
     }
 
-    //default if needed
-    // private void drawTrail(Graphics g) {
-    //     for (TrailPoint p : trail) p.draw(g, simCameraX, simCameraY);
-    // }
-
     private void drawTrailLine(Graphics2D g2) {
-    if (trail.size() < 2) return; // Need at least 2 points to draw a line
+        if (trail.size() < 2) return;
 
-    for (int i = 0; i < trail.size() - 1; i++) {
-        TrailPoint p1 = trail.get(i);
-        TrailPoint p2 = trail.get(i + 1);
+        for (int i = 0; i < trail.size() - 1; i++) {
+            TrailPoint p1 = trail.get(i);
+            TrailPoint p2 = trail.get(i + 1);
 
-        // Use the average time of the two points to determine color
-        double avgTime = (p1.getTime() + p2.getTime()) / 2.0;
-        g2.setColor(timeToColor(avgTime));
+            double avgTime = (p1.getTime() + p2.getTime()) / 2.0;
+            g2.setColor(timeToColor(avgTime));
+            g2.setStroke(new BasicStroke(2));
 
-        g2.setStroke(new BasicStroke(2)); // line thickness
-        g2.drawLine(
-            p1.getX() + simCameraX, p1.getY() + simCameraY,
-            p2.getX() + simCameraX, p2.getY() + simCameraY
-        );
+            g2.drawLine(p1.getX() + simCameraX, p1.getY() + simCameraY,
+                        p2.getX() + simCameraX, p2.getY() + simCameraY);
         }
     }
 
-    // Helper method for converting time to color (similar to TrailPoint)
     private Color timeToColor(double time) {
-        float hue = (float) ((time % 10) / 10.0); // cycles every 10 seconds
+        float hue = (float) ((time % 10) / 10.0);
         return Color.getHSBColor(hue, 1.0f, 1.0f);
     }
 
@@ -294,17 +396,18 @@ public final class PendulumPanel extends JPanel {
     }
 
     private void drawFullPanelVignette(Graphics2D g2) {
-        int width = getWidth();
-        int height = getHeight();
-        int cx = width / 2;
-        int cy = height / 2;
+        Utils.drawVignette(
+            g2,
+            getWidth(),
+            getHeight(),
+            new Color(0, 0, 0, 0),     // inner transparent color
+            new Color(0, 0, 0, 150)    // outer dark fade color
+        );
+    }
 
-        float radius = (float) Math.hypot(cx, cy);
-        float[] dist = {0.0f, 1.0f};
-        Color[] colors = {new Color(0, 0, 0, 0), new Color(0, 0, 0, 150)};
-        RadialGradientPaint paint = new RadialGradientPaint(cx, cy, radius, dist, colors);
-        g2.setPaint(paint);
-        g2.fillRect(0, 0, width, height);
+    private void drawTextFieldName(Graphics2D g2, int x, int y, int width, int height, String name){
+        Utils.drawBox(g2, x, y, width, height, Color.white);
+        Utils.drawTextInBox(g2, name, x, y, width, height);
     }
 
     // ----------------------------
@@ -312,7 +415,6 @@ public final class PendulumPanel extends JPanel {
     // ----------------------------
     private void setupSimBoxMouseDetection() {
         MouseAdapter mouseHandler = new MouseAdapter() {
-
             @Override
             public void mousePressed(MouseEvent e) {
                 if (isMouseInSimBox(e.getX(), e.getY())) {
@@ -362,8 +464,8 @@ public final class PendulumPanel extends JPanel {
     }
 
     private boolean isMouseInSimBox(int x, int y) {
-        return x >= CORNER_X && x <= CORNER_X + SIM_WIDTH &&
-               y >= CORNER_Y && y <= CORNER_Y + SIM_HEIGHT;
+        return x >= CORNER_X && x <= CORNER_X + SIM_WIDTH
+            && y >= CORNER_Y && y <= CORNER_Y + SIM_HEIGHT;
     }
 
     private void handleMouseLeaving() {

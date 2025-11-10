@@ -32,7 +32,7 @@ public class PendulumWindow {
                     if (e.getKeyCode() == KeyEvent.VK_F11) {
                         toggleFullscreen(frame);
                     }
-                }
+                }        
             });
         });
     }
@@ -56,7 +56,6 @@ public class PendulumWindow {
             frame.setUndecorated(true);
             device.setFullScreenWindow(frame);
         }
-
         isFullscreen = !isFullscreen;
     }
 }

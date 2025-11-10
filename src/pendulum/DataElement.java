@@ -2,7 +2,7 @@ package pendulum;
 
 public class DataElement {
     private final String variableName;
-    private final double value;
+    private double value;
     private final boolean changeable;
 
     public DataElement(boolean changeable, double value, String variableName) {
@@ -23,4 +23,7 @@ public class DataElement {
         return changeable;
     }
     
+    public void setValue(double value) {
+        this.value = value;
+    }
 }

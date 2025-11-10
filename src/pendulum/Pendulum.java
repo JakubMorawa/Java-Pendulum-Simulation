@@ -59,7 +59,16 @@ public class Pendulum {
     public void draw(Graphics g, int offsetX, int offsetY) {
         g.setColor(Color.BLACK);
         g.drawLine((int) pivotX + offsetX, (int) pivotY + offsetY, bobX + offsetX, bobY + offsetY);
-        g.fillOval(bobX + offsetX - 10, bobY + offsetY - 10, 20, 20);
+        Utils.drawCircle(
+            (Graphics2D) g,
+            bobX + offsetX - 10,  // x
+            bobY + offsetY - 10,  // y
+            20,                   // width
+            20,                   // height
+            Color.RED,           // fill color (pick any)
+            Color.BLACK,          // border color
+            2f                    // border width (2 pixels, for example)
+        );
     }
 
     // ----------------------------
@@ -84,6 +93,10 @@ public class Pendulum {
     // ----------------------------
     public List<DataElement> getPendulumData() {
         List<DataElement> elements = new ArrayList<>();
+        elements.add(new DataElement(false, PendulumPanel.getTime(), "Time"));
+        elements.add(new DataElement(false, getAngularAcceleration(), "Angular Acceleration"));
+        elements.add(new DataElement(false, getBobX(), "Bob X"));
+        elements.add(new DataElement(false, getBobY(), "Bob Y"));
         elements.add(new DataElement(true, getLength(), "Length"));
         elements.add(new DataElement(true, getMass(), "Mass"));
         elements.add(new DataElement(true, getPivotX(), "Pivot X"));
@@ -92,10 +105,7 @@ public class Pendulum {
         elements.add(new DataElement(true, getInitialAngle(), "Initial Angle"));
         elements.add(new DataElement(true, getAngularVelocity(), "Angular Velocity"));
         elements.add(new DataElement(true, getInitialAngularVelocity(), "Initial Angular Velocity"));
-        elements.add(new DataElement(false, getAngularAcceleration(), "Angular Acceleration"));
-        elements.add(new DataElement(false, getBobX(), "Bob X"));
-        elements.add(new DataElement(false, getBobY(), "Bob Y"));
-        elements.add(new DataElement(false, PendulumPanel.getTime(), "Time"));
+        
         return elements;
     }
 
