@@ -110,10 +110,11 @@ public class Utils {
     /**
      * Draws text centered vertically within a box.
      */
-    public static void drawTextInBox(Graphics2D g2, String text, int x, int y, int width, int height) {
+    public static void drawTextInBox(Graphics2D g2, String text, int x, int y, int width, int height, int fontSize) {
         Shape oldClip = g2.getClip();
         g2.setClip(x, y, width, height);
-
+        Font font = new Font("Poppins", Font.BOLD, fontSize);
+        g2.setFont(font);
         FontMetrics metrics = g2.getFontMetrics();
         int textY = y + (height - metrics.getHeight()) / 2 + metrics.getAscent();
 
@@ -164,4 +165,24 @@ public class Utils {
         g2.setPaint(paint);
         g2.fillRect(0, 0, width, height);
     }
+
+    public static void drawGrid(Graphics2D g2, int cameraX, int cameraY, int cornerX, int cornerY,
+                            int width, int height, int spacing, Color color, int stroke) {
+
+        g2.setStroke(new BasicStroke(stroke));
+        g2.setColor(color);
+
+        int xOffset = (cameraX % spacing);
+        int yOffset = (cameraY % spacing);
+
+        // Vertical lines
+        for (int x = cornerX + xOffset; x <= cornerX + width; x += spacing) {
+            g2.drawLine(x, cornerY, x, cornerY + height);
+        }
+
+        // Horizontal lines
+        for (int y = cornerY + yOffset; y <= cornerY + height; y += spacing) {
+            g2.drawLine(cornerX, y, cornerX + width, y);
+        }
+    } 
 }

@@ -18,6 +18,10 @@ public enum Colors {
     SET(new Color(0,0,200)),
     ACTIVE(new Color(200, 240, 255)),
     ERROR(new Color(200, 0, 0)),
+    //GRAPH
+    GRAPH_BACKGROUND(new Color(255,255,255)),
+    GRID(new Color(200,200,255)), 
+    AXES(new Color(0,0,255)),
     ;
 
     private final Color color;

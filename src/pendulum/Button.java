@@ -10,8 +10,8 @@ public class Button extends JComponent {
     // Fields
     // ----------------------------
     private final int x, y, width, height;
-    private final int BORDER_WIDTH;
-    private final int FONT_SIZE;
+    private final int borderWidth;
+    private final int fontSize;
 
     private String text;
     private Color buttonColor;
@@ -31,7 +31,7 @@ public class Button extends JComponent {
     // ----------------------------
     // Constructor
     // ----------------------------
-    public Button(int x, int y, int width, int height, String text, Color buttonColor, int buttonType, int BORDER_WIDTH, int FONT_SIZE) {
+    public Button(int x, int y, int width, int height, String text, Color buttonColor, int buttonType, int borderWidth, int fontSize) {
         this.x = x;
         this.y = y;
         this.width = width;
@@ -39,8 +39,8 @@ public class Button extends JComponent {
         this.text = text;
         this.buttonColor = buttonColor;
         this.buttonType = buttonType;
-        this.BORDER_WIDTH = BORDER_WIDTH;
-        this.FONT_SIZE = FONT_SIZE;
+        this.borderWidth = borderWidth;
+        this.fontSize = fontSize;
     }
 
     // ----------------------------
@@ -72,7 +72,7 @@ public class Button extends JComponent {
     // Drawing
     // ----------------------------
     public void draw(Graphics2D g2) {
-        g2.setStroke(new BasicStroke(BORDER_WIDTH));
+        g2.setStroke(new BasicStroke(borderWidth));
 
         Color displayColor = buttonColor;
         if (pressed) displayColor = Utils.richDarken(buttonColor, 0.2f);
@@ -82,13 +82,13 @@ public class Button extends JComponent {
         switch (buttonType) {
             case TYPE_ROUND -> Utils.drawRoundSquare(g2, x, y, width, height, displayColor,  0.5f, 0.3);
             case TYPE_CIRCLE -> Utils.drawCircle(g2, x, y, width, height, displayColor, Color.black, 1);
-            default -> Utils.drawSquare(g2, x, y, width, height, displayColor, BORDER_WIDTH);
+            default -> Utils.drawSquare(g2, x, y, width, height, displayColor, borderWidth);
         }
 
         // Draw text
-        Font font = new Font("Poppins", Font.BOLD, FONT_SIZE);
+        Font font = new Font("Poppins", Font.BOLD, fontSize);
         int textX = x + (width - g2.getFontMetrics(font).stringWidth(text)) / 2;
-        int textY = y + height / 2 + FONT_SIZE/2 -3;
+        int textY = y + height / 2 + fontSize/2 -3;
         Utils.drawTextWithBorder(g2, text, textX, textY, font, Color.WHITE, Color.BLACK, 2);
     }
 

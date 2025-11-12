@@ -24,7 +24,7 @@ public class DataSet {
     public static void drawDataSet(Graphics g, List<DataElement> elements) {
         Graphics2D g2 = (Graphics2D) g;
         g2.setStroke(new BasicStroke(BORDER_WIDTH));
-        Font font = new Font("Poppins", Font.BOLD, 23);
+        Font font = new Font("Poppins", Font.BOLD, 22);
         g2.setFont(font);
 
         for (int i = 0; i < elements.size(); i++) {
@@ -35,12 +35,12 @@ public class DataSet {
             // Name Box
             Color boxColor = e.isChangeable() ? Colors.CHANGEABLE.toColor() : Colors.UNCHANGEABLE.toColor();
             Utils.drawBox(g2, CORNER_X, y, BOX_WIDTH_NAME, BOX_HEIGHT, boxColor);
-            Utils.drawTextInBox(g2, e.getVariableName(), CORNER_X, y, BOX_WIDTH_NAME, BOX_HEIGHT);
+            Utils.drawTextInBox(g2, e.getVariableName(), CORNER_X, y, BOX_WIDTH_NAME, BOX_HEIGHT,22);
 
             //Value Box
             if(!e.isChangeable()) extraRoom = TAB_WIDTH + 1;// setting extra space if button doesn't exist
             Utils.drawBox(g2, CORNER_X + BOX_WIDTH_NAME, y, BOX_WIDTH_VALUE + extraRoom, BOX_HEIGHT, boxColor);
-            Utils.drawTextInBox(g2, String.format("%.2f", e.getValue()), CORNER_X + BOX_WIDTH_NAME, y, BOX_WIDTH_VALUE + extraRoom, BOX_HEIGHT);
+            Utils.drawTextInBox(g2, String.format("%.2f", e.getValue()), CORNER_X + BOX_WIDTH_NAME, y, BOX_WIDTH_VALUE + extraRoom, BOX_HEIGHT,22);
         }
     }
 
@@ -54,7 +54,7 @@ public class DataSet {
         for (int i = 0; i < elements.size(); i++) {
             DataElement e = elements.get(i);
             if(e.isChangeable()){
-                tabButtons.add(new Button(TabX, TabY + BOX_HEIGHT*i +1, TAB_WIDTH, BOX_HEIGHT-2, "", Colors.TAB.toColor(),0,2, 30));
+                tabButtons.add(new Button(TabX, TabY + BOX_HEIGHT*i +1, TAB_WIDTH, BOX_HEIGHT-2, "", Colors.TAB.toColor(),0,2, 22));
                 
             }
         }
