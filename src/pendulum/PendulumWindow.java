@@ -20,7 +20,7 @@ public class PendulumWindow {
 
             // Start in fullscreen
             frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
-            frame.setMinimumSize(new Dimension(1000, 1000));
+            frame.setMinimumSize(new Dimension(2560, 1440));
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
             panel.requestFocusInWindow();

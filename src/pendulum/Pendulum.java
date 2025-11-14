@@ -124,6 +124,9 @@ public class Pendulum {
     public int getBobX() { return bobX; }
     public int getBobY() { return bobY; }
 
+    public double getVelocityX() {return angularVelocity*length*Math.cos(angle)*2;}
+    public double getVelocityY() {return angularVelocity*length*Math.sin(angle)*2;}
+
     // ----------------------------
     // Setters
     // ----------------------------

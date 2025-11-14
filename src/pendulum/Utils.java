@@ -166,9 +166,7 @@ public class Utils {
         g2.fillRect(0, 0, width, height);
     }
 
-    public static void drawGrid(Graphics2D g2, int cameraX, int cameraY, int cornerX, int cornerY,
-                            int width, int height, int spacing, Color color, int stroke) {
-
+    public static void drawGrid(Graphics2D g2, int cameraX, int cameraY, int cornerX, int cornerY, int width, int height, int spacing, Color color, int stroke) {
         g2.setStroke(new BasicStroke(stroke));
         g2.setColor(color);
 
@@ -184,5 +182,50 @@ public class Utils {
         for (int y = cornerY + yOffset; y <= cornerY + height; y += spacing) {
             g2.drawLine(cornerX, y, cornerX + width, y);
         }
-    } 
+    }
+
+    public static void drawArrow(Graphics2D g2, int x, int y, int i, int j, int border, Color color) {
+        g2.setColor(color);
+        g2.setStroke(new BasicStroke(border));
+
+        // Arrowhead size
+        int arrowSize = 12;
+
+        // Angle of the arrow line
+        double angle = Math.atan2(j, i);
+
+        // Compute the original end point
+        int endX = x + i;
+        int endY = y + j;
+
+        
+
+        if (i*i+j*j>=arrowSize*arrowSize) {
+            // NEW: shorten the line so the arrowhead is not overlapped
+            int lineEndX = (int) (endX - arrowSize * Math.cos(angle));
+            int lineEndY = (int) (endY - arrowSize * Math.sin(angle));
+    
+            // Draw shortened line
+            g2.drawLine(x, y, lineEndX, lineEndY);
+    
+            // Arrowhead triangle points
+            int x1 = (int) (endX - arrowSize * Math.cos(angle - Math.PI / 6));
+            int y1 = (int) (endY - arrowSize * Math.sin(angle - Math.PI / 6));
+    
+            int x2 = (int) (endX - arrowSize * Math.cos(angle + Math.PI / 6));
+            int y2 = (int) (endY - arrowSize * Math.sin(angle + Math.PI / 6));
+    
+            // Create the filled triangle arrowhead
+            Polygon arrowHead;
+            arrowHead = new Polygon();
+            arrowHead.addPoint(endX, endY); // tip
+            arrowHead.addPoint(x1, y1);     // left edge
+            arrowHead.addPoint(x2, y2);     // right edge
+            g2.fillPolygon(arrowHead);
+        }else{
+            g2.drawLine(x, y, endX, endY);
+        }
+
+        
+    }
 }

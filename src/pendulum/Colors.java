@@ -9,6 +9,7 @@ public enum Colors {
     RESET(new Color(255, 127, 80)),
     FOLLOW(new Color(0, 123, 255)),
     TRACE(new Color(138, 43, 226)),
+    ARROW_BUTTON(new Color(255, 140, 0)),
     //DATA SET
     TAB(new Color(138, 43, 226)),
     TAB_SELECTED(new Color(250,200,0)),
@@ -22,6 +23,7 @@ public enum Colors {
     GRAPH_BACKGROUND(new Color(255,255,255)),
     GRID(new Color(200,200,255)), 
     AXES(new Color(0,0,255)),
+    ARROW(new Color(200,0,255)),
     ;
 
     private final Color color;

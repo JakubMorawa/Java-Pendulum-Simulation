@@ -43,6 +43,7 @@ public final class PendulumPanel extends JPanel {
     private boolean isRunning = true;
     private boolean cameraFollow = false;
     private boolean tracing = false;
+    private boolean showArrow = false;
 
     private final Pendulum pendulum = new Pendulum(200, 10, 0, 0, Math.PI / 4, 0);
     private final List<TrailPoint> trail = new ArrayList<>();
@@ -256,6 +257,8 @@ public final class PendulumPanel extends JPanel {
 
         // Trace
         createButton(baseX + 3 * (BUTTON_WIDTH + BUTTON_SPACING), baseY, BUTTON_WIDTH, BUTTON_HEIGHT, 30, "Trace", Colors.TRACE.toColor(), () -> tracing = !tracing);
+
+        createButton(baseX + 4 * (BUTTON_WIDTH + BUTTON_SPACING), baseY, BUTTON_WIDTH, BUTTON_HEIGHT, 30, "Arrow", Colors.ARROW_BUTTON.toColor(), () -> showArrow = !showArrow);
     }
 
     private Button createButton(int x, int y, int w, int h, int fontSize,String text, Color color, Runnable action) {
@@ -300,20 +303,40 @@ public final class PendulumPanel extends JPanel {
     // ----------------------------
     // Mouse handling
     // ----------------------------
+
     private void setupMouseHandling() {
+
         MouseAdapter mouseHandler = new MouseAdapter() {
+
             @Override
-            public void mousePressed(MouseEvent e) { handleMousePress(e); }
+            public void mousePressed(MouseEvent e) {
+                if (SwingUtilities.isLeftMouseButton(e)) {
+                    handleMousePress(e);
+                }
+            }
+
             @Override
-            public void mouseReleased(MouseEvent e) { handleMouseRelease(e); }
+            public void mouseReleased(MouseEvent e) {
+                handleMouseRelease(e);
+            }
+
             @Override
-            public void mouseDragged(MouseEvent e) { handleMouseDrag(e); }
+            public void mouseDragged(MouseEvent e) {
+                handleMouseDrag(e);
+            }
+
             @Override
-            public void mouseMoved(MouseEvent e) { mouseInSimBox = isMouseInSimBox(e.getX(), e.getY()); }
+            public void mouseMoved(MouseEvent e) {
+                mouseInSimBox = isMouseInSimBox(e.getX(), e.getY());
+
+                for (Button b : buttons) b.handleMouse(e);
+                for (Button b : tabButtons) b.handleMouse(e);
+            }
         };
 
         addMouseListener(mouseHandler);
         addMouseMotionListener(mouseHandler);
+        addMouseWheelListener(mouseHandler);
     }
 
     private void handleMousePress(MouseEvent e) {
@@ -328,7 +351,6 @@ public final class PendulumPanel extends JPanel {
             mouseLastY = e.getY();
             setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         }
-        repaint();
     }
 
     private void handleMouseRelease(MouseEvent e) {
@@ -336,13 +358,11 @@ public final class PendulumPanel extends JPanel {
         setCursor(Cursor.getDefaultCursor());
         for (Button b : buttons) b.handleMouse(e);
         for (Button b : tabButtons) b.handleMouse(e);
-        repaint();
     }
 
     private void handleMouseDrag(MouseEvent e) {
         updateMousePosition(e);
         if (mousePressedInSimBox && mouseInSimBox) calculateCameraDiff();
-        repaint();
     }
 
     private boolean isMouseInSimBox(int x, int y) {
@@ -403,52 +423,65 @@ public final class PendulumPanel extends JPanel {
         drawSimulation(g2);
 
         drawButtons(g2);
-        DataSet.drawDataSet(g, pendulum.getPendulumData());
+        drawDataSet(g);
 
         drawBoxWithText(g2,dataElements.get(buttonNameIndexSelected).getVariableName(),1300, TEXT_FIELD_Y, 300, 40,22); //TextFieldName
 
         drawCameraLabels(g2);
         
         drawGraph(g2, graph);
-    }
 
+        
+    }
+    
+    private void drawDataSet(Graphics g) {
+        DataSet.drawDataSet(g, pendulum.getPendulumData());
+    }
+    private void drawArrow(Graphics2D g2) {
+        Utils.drawArrow(g2, pendulum.getBobX()+simCameraX, pendulum.getBobY()+simCameraY, (int)pendulum.getVelocityX(), -(int)pendulum.getVelocityY(), 3, Colors.ARROW.toColor());
+    }
+    
     private void drawCameraLabels(Graphics2D g2) {
         int xLabelX = CAM_SECTION_X;
         int xLabelY = CAM_SECTION_Y;
-
+        
         int yLabelX = xLabelX + CAM_LABEL_WIDTH + CAM_FIELD_WIDTH + CAM_GAP_BETWEEN_LABEL_AND_FIELD + CAM_GAP_BETWEEN_AXES;
         int yLabelY = CAM_SECTION_Y;
-
+        
         drawBoxWithText(g2, "X: " + cameraDiffX, xLabelX, xLabelY, CAM_LABEL_WIDTH, CAM_LABEL_HEIGHT,16);
         drawBoxWithText(g2, "Y: " + cameraDiffY, yLabelX, yLabelY, CAM_LABEL_WIDTH, CAM_LABEL_HEIGHT,16);
     }
-
+    
     private void drawBackground(Graphics2D g2) { g2.setColor(new Color(200, 30, 100)); g2.fillRect(0,0,getWidth(),getHeight()); }
-
+    
     private void drawVignette(Graphics2D g2) { Utils.drawVignette(g2,getWidth(),getHeight(),new Color(0,0,0,0),new Color(0,0,0,150)); }
-
+    
     private void drawSimulation(Graphics2D g2) {
+
+        // Draw background & clip to simulation box
         Utils.drawSquare(g2, CORNER_X, CORNER_Y, SIM_WIDTH, SIM_HEIGHT, Color.WHITE, SIM_BORDER_STROKE);
         Shape oldClip = g2.getClip();
         g2.setClip(CORNER_X, CORNER_Y, SIM_WIDTH, SIM_HEIGHT);
 
+        // Draw zoomed & panned grid
         Utils.drawGrid(g2, simCameraX, simCameraY, CORNER_X, CORNER_Y, SIM_WIDTH, SIM_HEIGHT, SIM_SPACING, Colors.GRID.toColor(), 1);
 
-        //draw axes
-        g2.setStroke(new BasicStroke(2));
+        // Draw axes (world coordinates)
         g2.setColor(Colors.AXES.toColor());
-        g2.drawLine(CORNER_X, simCameraY, CORNER_X + SIM_WIDTH, simCameraY);
-        g2.drawLine(simCameraX, CORNER_Y, simCameraX, CORNER_Y + SIM_HEIGHT);
+        g2.drawLine(0, simCameraY, CORNER_X + SIM_WIDTH, simCameraY);
+        g2.drawLine(simCameraX, 0, simCameraX, CORNER_Y + SIM_HEIGHT);
 
+        // Draw trail, arrow, and pendulum in world coordinates
         if (tracing) drawTrail(g2);
+        if (showArrow) drawArrow(g2);
         pendulum.draw(g2, simCameraX, simCameraY);
+
 
         g2.setClip(oldClip);
     }
 
     private void drawTrail(Graphics2D g2) {
         if(trail.size()<2) return;
-
         for(int i=0;i<trail.size()-1;i++){
             TrailPoint p1=trail.get(i), p2=trail.get(i+1);
             double avgTime=(p1.getTime()+p2.getTime())/2;
