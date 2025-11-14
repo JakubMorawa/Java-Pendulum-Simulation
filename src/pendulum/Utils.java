@@ -198,8 +198,6 @@ public class Utils {
         int endX = x + i;
         int endY = y + j;
 
-        
-
         if (i*i+j*j>=arrowSize*arrowSize) {
             // NEW: shorten the line so the arrowhead is not overlapped
             int lineEndX = (int) (endX - arrowSize * Math.cos(angle));
