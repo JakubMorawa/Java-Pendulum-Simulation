@@ -539,6 +539,7 @@ public final class PendulumPanel extends JPanel {
 
     private void drawLabels(Graphics2D g2){
         for(int i = 0;i<labels.size();i++){
+            setupLabelsStrings();
             labels.get(i).draw(g2,labelStrings.get(i));
         }
     }
