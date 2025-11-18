@@ -48,8 +48,9 @@ public final class PendulumPanel extends JPanel {
     private boolean tracing = false;
     private boolean showArrow = false;
 
-    private final Pendulum pendulum = new Pendulum(200, 10, 0, 0, Math.PI / 4, 0);
-    private final Pendulum pendulum2 = new Pendulum(200, 10, 0, 0, Math.PI / 4, 0.1);
+    private final Pendulum pendulum = new Pendulum(200, 10, 0, 0, Math.PI / 4, 0.6);
+    private final Pendulum pendulum2 = new Pendulum(200, 10, 0, 0, Math.PI / 4, -0.5);
+    private final Pendulum pendulum3 = new Pendulum(200, 10, 0, 0, Math.PI / 4, 0.5);
     private final List<Pendulum> pendulums = new ArrayList<>();
     private final List<TrailPoint> trail = new ArrayList<>();
 
@@ -139,6 +140,7 @@ public final class PendulumPanel extends JPanel {
     private void setupPendulums() {
         pendulums.add(pendulum);
         pendulums.add(pendulum2);
+        pendulums.add(pendulum3);
     }
     // ----------------------------
     // Text Fields
@@ -411,7 +413,7 @@ public final class PendulumPanel extends JPanel {
             }
             time += DELTA_TIME;
 
-            trail.add(new TrailPoint(pendulum.getBobX(), pendulum.getBobY(), time));
+            trail.add(new TrailPoint(pendulum3.getBobX(), pendulum3.getBobY(), time));
             if (trail.size() > TRAIL_LIMIT) trail.remove(0);
         }
 
@@ -457,13 +459,17 @@ public final class PendulumPanel extends JPanel {
 
         if (tracing) drawTrail(g2);
         if (showArrow) drawArrow(g2);
+        int LastBobX = 0;
+        int LastBobY = 0;
         for(int i = 0; i<pendulums.size();i++){
             if(i == 0){
                 pendulums.get(i).draw(g2, simCameraX, simCameraY, zoom);
             }else{
-                int LastBobX = (int)(pendulums.get(i-1).getBobX()*zoom);
-                int LastBobY = (int)(pendulums.get(i-1).getBobY()*zoom);
-                pendulums.get(i).draw(g2, simCameraX + LastBobX, simCameraY + LastBobY, zoom);
+                LastBobX = (int)(pendulums.get(i-1).getBobX());
+                LastBobY = (int)(pendulums.get(i-1).getBobY());
+                pendulums.get(i).setPivotX(LastBobX);
+                pendulums.get(i).setPivotY(LastBobY);
+                pendulums.get(i).draw(g2, simCameraX, simCameraY, zoom);
             }
 
         }
