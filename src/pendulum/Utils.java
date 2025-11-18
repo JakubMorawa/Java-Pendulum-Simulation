@@ -170,19 +170,29 @@ public class Utils {
         g2.setStroke(new BasicStroke(stroke));
         g2.setColor(color);
 
-        int xOffset = (cameraX % spacing);
-        int yOffset = (cameraY % spacing);
-
         // Vertical lines
-        for (int x = cornerX + xOffset; x <= cornerX + width; x += spacing) {
+        for (int x = cameraX; x <= cornerX + width; x += spacing) {
+            g2.drawLine(x, cornerY, x, cornerY + height);
+        }
+        for (int x = cameraX; x >= cornerX; x -= spacing) {
             g2.drawLine(x, cornerY, x, cornerY + height);
         }
 
         // Horizontal lines
-        for (int y = cornerY + yOffset; y <= cornerY + height; y += spacing) {
+        for (int y = cameraY; y <= cornerY + height; y += spacing) {
             g2.drawLine(cornerX, y, cornerX + width, y);
         }
+        for (int y = cameraY; y >= cornerY ; y -= spacing) {
+            g2.drawLine(cornerX, y, cornerX + width, y);
+        }
+        
+        // g2.setStroke(new BasicStroke(10));
+        // g2.setColor(Color.yellow);
+        // g2.drawLine(cornerX, cameraY, cornerX + width, cameraY);
+        // g2.setStroke(new BasicStroke(3));
     }
+
+
 
     public static void drawArrow(Graphics2D g2, int x, int y, int i, int j, int border, Color color) {
         g2.setColor(color);
@@ -223,7 +233,5 @@ public class Utils {
         }else{
             g2.drawLine(x, y, endX, endY);
         }
-
-        
     }
 }
