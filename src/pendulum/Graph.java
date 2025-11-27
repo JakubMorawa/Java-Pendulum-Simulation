@@ -24,7 +24,7 @@ public class Graph {
     private int originY;
 
     public Graph(int x, int y, int width, int height, int borderWidth,
-                 Color graphColor, Color gridColor, List<TrailPoint> trail) {
+                Color graphColor, Color gridColor, List<TrailPoint> trail) {
         this.x = x;
         this.y = y;
         this.width = width;

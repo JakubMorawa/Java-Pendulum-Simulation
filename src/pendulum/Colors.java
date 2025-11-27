@@ -10,6 +10,8 @@ public enum Colors {
     FOLLOW(new Color(0, 123, 255)),
     TRACE(new Color(138, 43, 226)),
     ARROW_BUTTON(new Color(255, 140, 0)),
+
+    PENDULUM_BUTTON(new Color(0, 140, 0)),
     //DATA SET
     TAB(new Color(138, 43, 226)),
     TAB_SELECTED(new Color(250,200,0)),

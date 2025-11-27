@@ -38,7 +38,7 @@ public final class PendulumPanel extends JPanel {
     // ----------------------------
     // Simulation state
     // ----------------------------
-    private static final int TRAIL_LIMIT = 500;
+    private static final int TRAIL_LIMIT = 5000;
     private static final double DELTA_TIME = 0.16;
     private static double time = 0;
     public static double getTime() { return time; }
@@ -48,10 +48,19 @@ public final class PendulumPanel extends JPanel {
     private boolean tracing = false;
     private boolean showArrow = false;
 
-    private final Pendulum pendulum = new Pendulum(200, 10, 0, 0, Math.PI / 4, 0.6);
-    private final Pendulum pendulum2 = new Pendulum(200, 10, 0, 0, Math.PI / 4, -0.5);
-    private final Pendulum pendulum3 = new Pendulum(200, 10, 0, 0, Math.PI / 4, 0.5);
+    private int pendulumObserved = 1;
+    private final Pendulum pendulum1 = new Pendulum(200, 10, 0, 0, Math.PI / 4, 0.2);
+    private final Pendulum pendulum2 = new Pendulum(200, 10, 0, 0, Math.PI / 4, -0.2);
+    private final Pendulum pendulum3 = new Pendulum(200, 10, 0, 0, Math.PI / 4, 0.2);
+    private final Pendulum pendulum4 = new Pendulum(100, 10, 0, 0, Math.PI / 4, -0.2);
     private final List<Pendulum> pendulums = new ArrayList<>();
+
+    private void setupPendulums() {
+        pendulums.add(pendulum1);
+        pendulums.add(pendulum2);
+        pendulums.add(pendulum3);
+        pendulums.add(pendulum4);
+    }
     private final List<TrailPoint> trail = new ArrayList<>();
 
     // ----------------------------
@@ -67,24 +76,24 @@ public final class PendulumPanel extends JPanel {
     private int buttonNameIndexSelected = 0;
     private double userValue = 0;
 
-    private List<DataElement> dataElements = pendulum.getPendulumData();
+    private List<DataElement> dataElements = pendulum1.getPendulumData();
     private List<Label> labels = new ArrayList<>();
 
-    private final List<Consumer<Double>> pendulumSetters = List.of(
-            pendulum::setLength,
-            pendulum::setMass,
-            pendulum::setPivotX,
-            pendulum::setPivotY,
-            pendulum::setAngle,
-            pendulum::setInitialAngle,
-            pendulum::setAngularVelocity,
-            pendulum::setInitialAngularVelocity
+    private List<Consumer<Double>> pendulumSetters = List.of(
+            pendulum1::setLength,
+            pendulum1::setMass,
+            pendulum1::setPivotX,
+            pendulum1::setPivotY,
+            pendulum1::setAngle,
+            pendulum1::setInitialAngle,
+            pendulum1::setAngularVelocity,
+            pendulum1::setInitialAngularVelocity
     );
 
     // Camera label positions
     private final int xLabelX = 1300;
     private final int xLabelY = 130;
-    private final int yLabelX = xLabelX + 100 + 80 + 5 + 30;
+    private final int yLabelX = xLabelX + 100 + 80 + 5 + 30;//magic number with 215
     private final int yLabelY = xLabelY;
 
     // ----------------------------
@@ -137,11 +146,7 @@ public final class PendulumPanel extends JPanel {
         }
     }
 
-    private void setupPendulums() {
-        pendulums.add(pendulum);
-        pendulums.add(pendulum2);
-        pendulums.add(pendulum3);
-    }
+    
     // ----------------------------
     // Text Fields
     // ----------------------------
@@ -154,7 +159,7 @@ public final class PendulumPanel extends JPanel {
                 if (buttonSelected < pendulumSetters.size())
                     pendulumSetters.get(buttonSelected).accept(userValue);
                 textField.setBackground(Color.WHITE);
-                pendulum.update(0.00000);//chnage it only for a little bit
+                pendulum1.update(0.00000);//chnage it only for a little bit
                 requestFocusInWindow();
             } catch (NumberFormatException ex) {
                 textField.setBackground(Colors.ERROR.toColor());
@@ -174,7 +179,7 @@ public final class PendulumPanel extends JPanel {
                 }
         );
 
-        Button setButton = createButton(1605 + 150 + 5, 190, 70, 40, 22, "SET", Colors.SET.toColor(), parseInput);
+        Button setButton = createButton(1605 + 150 + 5, 190, 70, 40, 22, "SET", Colors.SET.toColor(), 0, parseInput);
         buttons.add(setButton);
         add(textField);
     }
@@ -206,15 +211,17 @@ public final class PendulumPanel extends JPanel {
         int baseX = 1300;
         int baseY = 50;
 
-        createButton(baseX, baseY, 130, 60, 30, "STOP", Colors.STOP_RED.toColor(), () -> {
+        createButton(baseX, baseY, 130, 60, 30, "STOP", Colors.STOP_RED.toColor(), 1,() ->  {
             isRunning = !isRunning;
             Button b = buttons.get(0);
             b.setButtonColor(isRunning ? Colors.STOP_RED.toColor() : Colors.GO_GREEN.toColor());
             b.setText(isRunning ? "STOP" : "START");
         });
 
-        createButton(baseX + 150 + 20, baseY, 130, 60, 30, "Reset", Colors.RESET.toColor(), () -> {
-            pendulum.reset();
+        createButton(baseX + 150 + 20, baseY, 130, 60, 30, "Reset", Colors.RESET.toColor(),  1, () -> {
+            for (int i = 0; i < pendulums.size(); i++) {
+                pendulums.get(i).reset();
+            } //TODO THIS CODE IS NOT WORKING CORRECTLY PENDULUMS RESET ONE BY ONE
             trail.clear();
             time = 0;
             cameraDiffX = 0;
@@ -222,18 +229,31 @@ public final class PendulumPanel extends JPanel {
             if (cameraFollow) follow();
         });
 
-        createButton(baseX + 2 * (150 + 20), baseY, 130, 60, 30, "Follow", Colors.FOLLOW.toColor(),
+        createButton(baseX + 2 * (150 + 20), baseY, 130, 60, 30, "Follow", Colors.FOLLOW.toColor(), 1, 
                 () -> cameraFollow = !cameraFollow);
 
-        createButton(baseX + 3 * (150 + 20), baseY, 130, 60, 30, "Trace", Colors.TRACE.toColor(),
+        createButton(baseX + 3 * (150 + 20), baseY, 130, 60, 30, "Trace", Colors.TRACE.toColor(), 1, 
                 () -> tracing = !tracing);
 
-        createButton(baseX + 4 * (150 + 20), baseY, 130, 60, 30, "Arrow", Colors.ARROW_BUTTON.toColor(),
+        createButton(baseX + 4 * (150 + 20), baseY, 130, 60, 30, "Arrow", Colors.ARROW_BUTTON.toColor(), 1, 
                 () -> showArrow = !showArrow);
+
+
+        //pendulum buttons
+
+        createButton(yLabelX + 215 + 100 + 30 + 120 + 10, yLabelY, 60, 40, 20, "Prev", Colors.PENDULUM_BUTTON.toColor(), 0, 
+                () -> {if (pendulumObserved > 1) pendulumObserved--;
+                    pendulumSetters = pendulumSetters(pendulumObserved);
+                });
+        //magic number mess ylabelx + 215 just the original position, go by 100 + 30 to make gap + 120 + 10 to go past label and make gap, then 60 + 10 to make the next gap
+        createButton(yLabelX + 215 + 100 + 30 + 120 + 10 + 60 + 10, yLabelY, 60, 40, 20, "Next", Colors.PENDULUM_BUTTON.toColor(), 0, 
+                () ->  {if (pendulumObserved < pendulums.size()) pendulumObserved++;
+                    pendulumSetters = pendulumSetters(pendulumObserved);
+                });
     }
 
-    private Button createButton(int x, int y, int w, int h, int fontSize, String text, Color color, Runnable action) {
-        Button btn = new Button(x, y, w, h, text, color, 1, 3, fontSize);
+    private Button createButton(int x, int y, int w, int h, int fontSize, String text, Color color, int buttonType, Runnable action) {
+        Button btn = new Button(x, y, w, h, text, color, buttonType, 3, fontSize);
         btn.setOnClick(action);
         buttons.add(btn);
         return btn;
@@ -241,7 +261,7 @@ public final class PendulumPanel extends JPanel {
 
     private void setupTabButtons() {
         tabButtons.clear();
-        tabButtons.addAll(DataSet.createTabButtons(pendulum.getPendulumData()));
+        tabButtons.addAll(DataSet.createTabButtons(pendulum1.getPendulumData()));
 
         for (int i = 0, changeableIndex = 0; i < tabButtons.size(); i++, changeableIndex++) {
             int elementIndex = 0;
@@ -273,11 +293,12 @@ public final class PendulumPanel extends JPanel {
         labels.add(new Label( 1300, 190, 300, 40, 22, Color.WHITE));
         labels.add(new Label( xLabelX, xLabelY, 100, 40, 16, Color.WHITE));
         labels.add(new Label( yLabelX, yLabelY, 100, 40, 16, Color.WHITE));
-        labels.add(new Label( yLabelX + 200, yLabelY, 100, 40, 16, Color.WHITE));//magic number with 200
+        labels.add(new Label( yLabelX + 215, yLabelY, 100, 40, 16, Color.WHITE));//magic number with 215
+        labels.add(new Label( yLabelX + 215 + 100 + 30, yLabelY, 120, 40, 16, Color.WHITE));
     }
 
     private void updateLabelText() {
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < labels.size(); i++) {
             Label iLabel = labels.get(i);
 
             String newText = switch (i) {
@@ -285,11 +306,27 @@ public final class PendulumPanel extends JPanel {
                 case 1 -> "X: " + cameraDiffX;
                 case 2 -> "Y: " + cameraDiffY;
                 case 3 -> "Zoom: " + (int)(zoom*100);
+                case 4 -> "Pendulum: " + pendulumObserved;
                 default -> "Label no Text";
             };
 
             iLabel.setText(newText);
         }
+    }
+
+    private List<Consumer<Double>> pendulumSetters(int pendulumObserved){
+        Pendulum p = pendulums.get(pendulumObserved-1);
+        List<Consumer<Double>> setterList = List.of(
+            p::setLength,
+            p::setMass,
+            p::setPivotX,
+            p::setPivotY,
+            p::setAngle,
+            p::setInitialAngle,
+            p::setAngularVelocity,
+            p::setInitialAngularVelocity
+    );
+        return setterList;
     }
 
     // ----------------------------
@@ -326,10 +363,10 @@ public final class PendulumPanel extends JPanel {
 
                 double scroll = e.getPreciseWheelRotation();
                 double oldZoom = zoom;
-                double zoomFactor = 1.1;
+                double zoomFactor = 0.1;
 
-                if (scroll < 0) zoom *= zoomFactor;
-                else zoom /= zoomFactor;
+                if (scroll < 0) zoom -= zoomFactor;
+                else zoom += zoomFactor;
 
                 zoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoom));
 
@@ -391,8 +428,8 @@ public final class PendulumPanel extends JPanel {
     }
 
     private void follow() {
-        simCameraX = -pendulum.getBobX() + SIM_WIDTH / 2 + CORNER_X;
-        simCameraY = -pendulum.getBobY() + SIM_HEIGHT / 2 + CORNER_Y;
+        simCameraX = -pendulum1.getBobX() + SIM_WIDTH / 2 + CORNER_X;
+        simCameraY = -pendulum1.getBobY() + SIM_HEIGHT / 2 + CORNER_Y;
     }
 
     // ----------------------------
@@ -413,7 +450,8 @@ public final class PendulumPanel extends JPanel {
             }
             time += DELTA_TIME;
 
-            trail.add(new TrailPoint(pendulum3.getBobX(), pendulum3.getBobY(), time));
+            Pendulum p = pendulums.get(pendulumObserved-1);
+            trail.add(new TrailPoint(p.getBobX(),p.getBobY(), time)); // gets pendulum at the end of the list
             if (trail.size() > TRAIL_LIMIT) trail.remove(0);
         }
 
@@ -459,21 +497,19 @@ public final class PendulumPanel extends JPanel {
 
         if (tracing) drawTrail(g2);
         if (showArrow) drawArrow(g2);
-        int LastBobX = 0;
-        int LastBobY = 0;
-        for(int i = 0; i<pendulums.size();i++){
+        int LastBobX;
+        int LastBobY;
+        for(int i = 0; i < pendulums.size(); i++){
             if(i == 0){
                 pendulums.get(i).draw(g2, simCameraX, simCameraY, zoom);
-            }else{
+            } else {
                 LastBobX = (int)(pendulums.get(i-1).getBobX());
                 LastBobY = (int)(pendulums.get(i-1).getBobY());
                 pendulums.get(i).setPivotX(LastBobX);
                 pendulums.get(i).setPivotY(LastBobY);
                 pendulums.get(i).draw(g2, simCameraX, simCameraY, zoom);
             }
-
         }
-        pendulum.draw(g2, simCameraX, simCameraY, zoom);
 
         g2.setClip(oldClip);
     }
@@ -495,7 +531,8 @@ public final class PendulumPanel extends JPanel {
     }
 
     private void drawArrow(Graphics2D g2) {
-        Utils.drawArrow(g2, pendulum.getBobX()+simCameraX, pendulum.getBobY()+simCameraY, (int)pendulum.getVelocityX(), -(int)pendulum.getVelocityY(), 3, Colors.ARROW.toColor());
+        Pendulum p = pendulums.get(pendulumObserved-1);
+        Utils.drawArrow(g2, (int)(p.getBobX()*zoom)+simCameraX, (int)(p.getBobY()*zoom)+simCameraY, (int)(p.getVelocityX()*zoom*2), -(int)(p.getVelocityY()*zoom*2), 3, Colors.ARROW.toColor());//multiply by 2 to make it more visible
     }
 
     private void drawButtons(Graphics2D g2) { for(Button b: buttons) b.draw(g2); for(Button b : tabButtons) b.draw(g2); }
@@ -510,6 +547,6 @@ public final class PendulumPanel extends JPanel {
 
     private void drawGraph(Graphics2D g2, Graph graph) { graph.draw(g2); }
 
-    private void drawDataSet(Graphics g) { DataSet.drawDataSet(g, pendulum.getPendulumData()); }
+    private void drawDataSet(Graphics g) { DataSet.drawDataSet(g, pendulums.get(pendulumObserved-1).getPendulumData()); }
 
 }

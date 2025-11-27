@@ -45,7 +45,7 @@ public class Pendulum {
         double gravity = 9.81; // gravitational acceleration
         double damping = 0.0; // friction coefficient, tweak as needed
 
-        angularAcceleration = -(gravity / length) * Math.sin(angle);
+        angularAcceleration = -(gravity / length) * Math.sin(angle%(2*Math.PI));
         angularVelocity += angularAcceleration * deltaTime;
         angularVelocity *= (1 - damping);
         angle += angularVelocity * deltaTime;
@@ -100,8 +100,8 @@ public class Pendulum {
     // Bob Position
     // ----------------------------
     private void setBobPosition() {
-        bobX = (int) (pivotX + length * Math.sin(angle));
-        bobY = (int) (pivotY + length * Math.cos(angle));
+        bobX = (int) (pivotX + length * Math.sin(angle%(2*Math.PI)));
+        bobY = (int) (pivotY + length * Math.cos(angle%(2*Math.PI)));
     }
 
     // ----------------------------
@@ -140,8 +140,8 @@ public class Pendulum {
     public int getBobX() { return bobX; }
     public int getBobY() { return bobY; }
 
-    public double getVelocityX() {return angularVelocity*length*Math.cos(angle)*2;}
-    public double getVelocityY() {return angularVelocity*length*Math.sin(angle)*2;}
+    public double getVelocityX() {return angularVelocity*length*Math.cos(angle%(2*Math.PI));}
+    public double getVelocityY() {return angularVelocity*length*Math.sin(angle%(2*Math.PI));}
 
     // ----------------------------
     // Setters
