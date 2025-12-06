@@ -51,7 +51,7 @@ public class Graph {
         Utils.drawGrid(g2, cameraX, cameraY, x, y, width, height, spacing, gridColor, 1);
 
         // draw axis lines
-        g2.setColor(Colors.AXES.toColor());
+        g2.setColor(UIColors.AXES.toColor());
         g2.drawLine(x, originY, x + width, originY);  // horizontal
         g2.drawLine(originX, y, originX, y + height); // vertical
 

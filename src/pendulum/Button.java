@@ -9,9 +9,10 @@ public class Button extends JComponent {
     // ----------------------------
     // Fields
     // ----------------------------
-    private final int x, y, width, height;
-    private final int borderWidth;
-    private final int fontSize;
+    private int x, y, width, height;
+    private int borderWidth;
+    private int fontSize;
+    private int padding = 10;
 
     private String text;
     private Color buttonColor;
@@ -27,6 +28,8 @@ public class Button extends JComponent {
     public static final int TYPE_CIRCLE = 2;
 
     private final int buttonType;
+
+    private String imgPath;
 
     // ----------------------------
     // Constructor
@@ -90,11 +93,25 @@ public class Button extends JComponent {
         int textX = x + (width - g2.getFontMetrics(font).stringWidth(text)) / 2;
         int textY = y + height / 2 + fontSize/2 -3;
         Utils.drawTextWithBorder(g2, text, textX, textY, font, Color.WHITE, Color.BLACK, 2);
+
+        if(imgPath != null) {
+            Utils.drawImage(g2, imgPath, x+padding, y+padding, width-2*padding, height-2*padding);
+        }
     }
 
     // ----------------------------
     // Setters
     // ----------------------------
+
+    @Override
+    public void setBounds(int x, int y, int width, int height) {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+    }
+
     public void setButtonColor(Color color) { this.buttonColor = color; }
     public void setText(String text) { this.text = text; }
+    public void setImg(String imgPath) { this.imgPath = imgPath; }
 }

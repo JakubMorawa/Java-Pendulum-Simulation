@@ -2,7 +2,7 @@ package pendulum;
 
 import java.awt.Color;
 
-public enum Colors {
+public enum UIColors {
     //TOP BUTTONS
     STOP_RED(new Color(255,0,0)),
     GO_GREEN(new Color(0,255,0)),
@@ -26,11 +26,16 @@ public enum Colors {
     GRID(new Color(200,200,255)), 
     AXES(new Color(0,0,255)),
     ARROW(new Color(200,0,255)),
+
+    BACKGROUND(new Color(62,201,247)),
+    VIGNETTE(new Color(0,0,0,125)),
+
+    BOB_COLOR(new Color(255,50,50))
     ;
 
     private final Color color;
 
-    Colors(Color color) {this.color = color;}
+    UIColors(Color color) {this.color = color;}
     
     public Color toColor() {return color;}
 }

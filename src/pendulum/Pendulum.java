@@ -56,36 +56,38 @@ public class Pendulum {
     // ----------------------------
     // Drawing
     // ----------------------------
-    public void draw(Graphics g, int offsetX, int offsetY, double zoom) {
-    Graphics2D g2 = (Graphics2D) g;
+    public void drawLine(Graphics g, int offsetX, int offsetY, double zoom) {
+        Graphics2D g2 = (Graphics2D) g;
 
-    // Scale endpoints
-    int scaledPivotX = (int) (pivotX * zoom) + offsetX;
-    int scaledPivotY = (int) (pivotY * zoom) + offsetY;
-    int scaledBobX   = (int) (bobX * zoom)   + offsetX;
-    int scaledBobY   = (int) (bobY * zoom)   + offsetY;
+        // Scale endpoints
+        int scaledPivotX = (int) (pivotX * zoom) + offsetX;
+        int scaledPivotY = (int) (pivotY * zoom) + offsetY;
+        int scaledBobX   = (int) (bobX * zoom)   + offsetX;
+        int scaledBobY   = (int) (bobY * zoom)   + offsetY;
 
-    // Draw rod
-    g2.setColor(Color.BLACK);
-    g2.setStroke(new BasicStroke((int)(2*zoom)));
-    g2.drawLine(scaledPivotX, scaledPivotY, scaledBobX, scaledBobY);
+        // Draw rod
+        g2.setColor(Color.BLACK);
+        g2.setStroke(new BasicStroke((int)(2*zoom)));
+        g2.drawLine(scaledPivotX, scaledPivotY, scaledBobX, scaledBobY);
+    }
 
-    // Scale bob size
-    int scaledDiameter = (int) (20 * zoom);
-    int scaledRadiusOffset = scaledDiameter / 2;
-
-    // Draw bob (circle)
-    Utils.drawCircle(
-        g2,
-        scaledBobX - scaledRadiusOffset,
-        scaledBobY - scaledRadiusOffset,
-        scaledDiameter,
-        scaledDiameter,
-        Color.RED,
-        Color.BLACK,
-        (float) (2f * zoom)  // border width also scales (optional)
-    );
-}
+    public void drawBob(Graphics2D g2, int offsetX, int offsetY, double zoom) {
+        // Draw bob (circle)
+        int scaledBobX   = (int) (bobX * zoom)   + offsetX;
+        int scaledBobY   = (int) (bobY * zoom)   + offsetY;
+        int scaledDiameter = (int) (20 * zoom);
+        int scaledRadiusOffset = scaledDiameter / 2;
+        Utils.drawCircle(
+                g2,
+                scaledBobX - scaledRadiusOffset,
+                scaledBobY - scaledRadiusOffset,
+                scaledDiameter,
+                scaledDiameter,
+                UIColors.BOB_COLOR.toColor(),
+                Color.BLACK,
+                (float) (2f * zoom)  // border width also scales (optional)
+        );
+    }
 
     // ----------------------------
     // Reset
