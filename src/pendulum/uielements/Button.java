@@ -14,7 +14,7 @@ public class Button extends JComponent implements UIElement{
     // ----------------------------
     private int x, y, width, height;
     private final int borderWidth;
-    private final int fontSize;
+    // private final int fontSize;
     private final int padding = 8;
     
     private String text;
@@ -59,7 +59,7 @@ public class Button extends JComponent implements UIElement{
         this.buttonColor = buttonColor;
         this.buttonType = buttonType;
         this.borderWidth = borderWidth;
-        this.fontSize = fontSize;
+        // this.fontSize = fontSize;
         this.imgPath = null;
         loadImage();
     }
@@ -171,10 +171,10 @@ public class Button extends JComponent implements UIElement{
         int drawWidth = (int)(imgWidth * scale);
         int drawHeight = (int)(imgHeight * scale);
 
-        int offsetX = x + pad + (width - 2*pad - drawWidth) / 2;
-        int offsetY = y + pad + (height - 2*pad - drawHeight) / 2;
+        int offsetXimg = x + pad + (width - 2*pad - drawWidth) / 2;
+        int offsetYimg = y + pad + (height - 2*pad - drawHeight) / 2;
 
-        g2.drawImage(image, offsetX, offsetY, drawWidth, drawHeight, null);
+        g2.drawImage(image, offsetXimg, offsetYimg, drawWidth, drawHeight, null);
     }
 
     // ----------------------------

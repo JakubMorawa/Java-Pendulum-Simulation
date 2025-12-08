@@ -307,12 +307,12 @@ public final class PendulumPanel extends JPanel {
         pendelumSection.addElement(nextBtn);
     }
 
-    private Button createButton(int x, int y, int w, int h, int fontSize, String text, Color color, int buttonType, Runnable action) {
-        Button btn = new Button(x, y, w, h, text, color, buttonType, 3, fontSize);
-        btn.setOnClick(action);
-        buttons.add(btn);
-        return btn;
-    }
+    // private Button createButton(int x, int y, int w, int h, int fontSize, String text, Color color, int buttonType, Runnable action) {
+    //     Button btn = new Button(x, y, w, h, text, color, buttonType, 3, fontSize);
+    //     btn.setOnClick(action);
+    //     buttons.add(btn);
+    //     return btn;
+    // }
 
     private Button createButton(int w, int h , int fontSize, String text, String imgPath, Color color, int buttonType, Runnable action) {
         Button btn = new Button(0,0, w, h, text, color, buttonType, 3, fontSize);
