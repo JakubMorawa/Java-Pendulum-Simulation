@@ -1,6 +1,6 @@
 # Pendulum Simulation
 
-![Pendulum Simulation Screenshot](image_2025-11-26_210856015.png)
+![Pendulum Simulation Screenshot](Screenshot.png)
 
 ## Overview
 
@@ -15,6 +15,11 @@ Features include:
 - Dynamic adjustment of pendulum properties via GUI.
 - Camera movement, zoom, and "follow" mode.
 - Velocity arrow visualization.
+- Change camera position by dragging
+- Change zoom by scroll wheel
+- Change which pendulum you're observing which includes trace and follow
+- Hover over buttons to see what they do
+- Simple graph that shows the x position of the pendulum selected
 
 ## Controls
 
@@ -23,7 +28,7 @@ Features include:
 - **Follow:** Camera follows the observed pendulum.  
 - **Trace:** Toggle trail drawing for observed pendulum.  
 - **Arrow:** Toggle velocity arrow for observed pendulum.  
-- **Prev/Next Pendulum:** Switch between pendulums to adjust their properties.  
+- **Previous/Next Pendulum:** Switch between pendulums to adjust their properties.  
 - **Property Tabs and SET button:** Adjust pendulum parameters (length, mass, pivot, angle, etc.).
 
 ## Requirements
