@@ -9,10 +9,23 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import javax.swing.*;
+import pendulum.uielements.Button;
+import pendulum.uielements.DataSet;
+import pendulum.uielements.Graph;
+import pendulum.uielements.Label;
+import pendulum.uielements.RoundedTextField;
+import pendulum.uielements.Section;
+import pendulum.uielements.TextFieldUtils;
+import pendulum.uielements.UIColors;
+import pendulum.uielements.Utils;
 
 public final class PendulumPanel extends JPanel {
 
     // Simulation size & camera
+    private long lastFpsTime = 0;
+    private int frameCount = 0;
+    private int currentFps = 0;
+
     private static final int CORNER_X = 50;
     private static final int CORNER_Y = 50;
     private static final int SIM_BORDER_STROKE = 5;
@@ -27,8 +40,8 @@ public final class PendulumPanel extends JPanel {
     private static int cameraCenterX, cameraCenterY;
 
     private double zoom = 1.0;
-    private static final double ZOOM_MIN = 0.4;
-    private static final double ZOOM_MAX = 6.0;
+    private static final double ZOOM_MIN = 0.2;
+    private static final double ZOOM_MAX = 2.0;
 
     public static void setSIM_HEIGHT(int SIM_HEIGHT) { PendulumPanel.SIM_HEIGHT = SIM_HEIGHT; }
     public static void setSIM_WIDTH(int SIM_WIDTH) { PendulumPanel.SIM_WIDTH = SIM_WIDTH; }
@@ -46,7 +59,7 @@ public final class PendulumPanel extends JPanel {
 
 
     // Pendulums
-    private int pendulumObserved = 1;
+    private int selectedPendulum = 1;
     private final Pendulum pendulum1 = new Pendulum(200, 10, 0, 0, Math.PI / 4, 0.1);
     private final Pendulum pendulum2 = new Pendulum(200, 10, 0, 0, Math.PI / 4, -0.1);
     private final Pendulum pendulum3 = new Pendulum(200, 10, 0, 0, Math.PI / 4, 0.2);
@@ -66,9 +79,18 @@ public final class PendulumPanel extends JPanel {
     private JTextField cameraXField;
     private JTextField cameraYField;
 
-    private Section topSection = new Section(2000, 20, 800, 100, 30, 3, UIColors.BACKGROUND.toColor(), Utils.richDarken(UIColors.BACKGROUND.toColor(), 0.4f));
+    private static final Font UI_FONT = new Font("Poppins", Font.BOLD, 16);
+
+    private Section buttonSection = new Section(1550, 50, 0, 100, 30, 3, UIColors.BACKGROUND.toColor(), Utils.richDarken(UIColors.BACKGROUND.toColor(), 0.4f));
+    private Section pendelumSection = new Section(1810 , 50, 0, 100, 30, 3, UIColors.BACKGROUND.toColor(), Utils.richDarken(UIColors.BACKGROUND.toColor(), 0.4f));
+    private Section inputSection = new Section(1300, 250, 0, 0, 30, 3, UIColors.BACKGROUND.toColor(), Utils.richDarken(UIColors.BACKGROUND.toColor(), 0.4f));
+    private Section cameraSection = new Section(1300, 50, 10, 10, 30, 3, UIColors.BACKGROUND.toColor(), Utils.richDarken(UIColors.BACKGROUND.toColor(), 0.4f));
+
     private Section[] sections = {
-        topSection
+        buttonSection,
+        pendelumSection,
+        inputSection,
+        cameraSection
     };
 
     private final List<Button> buttons = new ArrayList<>();
@@ -91,16 +113,27 @@ public final class PendulumPanel extends JPanel {
             pendulum1::setInitialAngularVelocity
     );
 
+    private final String pausePath = "src\\pendulum\\resources\\images\\pause.png";
+    private final String playPath = "src\\pendulum\\resources\\images\\play.png";
+    private final String resetPath = "src\\pendulum\\resources\\images\\reset.png";
+    private final String followPath = "src\\pendulum\\resources\\images\\follow.png";
+    private final String tracePath = "src\\pendulum\\resources\\images\\trace.png";
+    private final String arrowPath = "src\\pendulum\\resources\\images\\arrow.png";
+    private final String nextPath = "src\\pendulum\\resources\\images\\next.png";
+    private final String prevPath = "src\\pendulum\\resources\\images\\previous.png";
+    private final String plusPath = "src\\pendulum\\resources\\images\\plus.png";
+
     // Camera label positions
     private final int xLabelX = 1300;
     private final int xLabelY = 130;
-    private final int yLabelX = xLabelX + 100 + 80 + 5 + 30;//magic number with 215
+    private final int LABEL_SPACING = 215;
+    private final int yLabelX = xLabelX + 100 + 80 + 5 + 30;
     private final int yLabelY = xLabelY;
 
     // Graph
-    private static final int GRAPH_X = 1900;
-    private static final int GRAPH_Y = 250;
-    private static final int GRAPH_WIDTH = 600;
+    private static final int GRAPH_X = 1300;
+    private static final int GRAPH_Y = 870;
+    private static final int GRAPH_WIDTH = 370;
     private static final int GRAPH_HEIGHT = GRAPH_WIDTH;
     private static final int GRAPH_STROKE = 2;
 
@@ -153,7 +186,7 @@ public final class PendulumPanel extends JPanel {
                 if (buttonSelected < pendulumSetters.size())
                     pendulumSetters.get(buttonSelected).accept(userValue);
                 textField.setBackground(Color.WHITE);
-                pendulum1.update(0.00000);//chnage it only for a little bit
+                pendulum1.update(0);//chnage it only for a little bit
                 requestFocusInWindow();
             } catch (NumberFormatException ex) {
                 textField.setBackground(UIColors.ERROR.toColor());
@@ -162,7 +195,7 @@ public final class PendulumPanel extends JPanel {
 
         textField = TextFieldUtils.createNumericTextField(
                 1605, 190, 150, 40,
-                new Font("Poppins", Font.BOLD, 16),
+                UI_FONT,
                 UIColors.ACTIVE.toColor(),
                 UIColors.ERROR.toColor(),
                 true,
@@ -172,83 +205,106 @@ public final class PendulumPanel extends JPanel {
                         pendulumSetters.get(buttonSelected).accept(userValue);
                 }
         );
+        ((RoundedTextField) textField).setOffset(150, 0);
+        inputSection.addElement((RoundedTextField) textField);
 
-        Button setButton = createButton(1605 + 150 + 5, 190, 70, 40, 22, "SET", UIColors.SET.toColor(), 0, parseInput);
+
+        Button setButton = createButton(40, 40, 22, "SET", plusPath,UIColors.SET.toColor(), 1, parseInput);
         buttons.add(setButton);
+        setButton.setOffset(370, 0);
+        inputSection.addElement(setButton);
         add(textField);
     }
 
     private void setupCameraTextFields() {
-        Font camFont = new Font("Poppins", Font.BOLD, 16);
 
         int xFieldX = xLabelX + 100 + 5;
         int yFieldX = yLabelX + 100 + 5;
 
         cameraXField = TextFieldUtils.createNumericTextField(
-                xFieldX, xLabelY, 80, 40, camFont, UIColors.ACTIVE.toColor(), UIColors.ERROR.toColor(),
+                xFieldX, xLabelY, 80, 40, UI_FONT, UIColors.ACTIVE.toColor(), UIColors.ERROR.toColor(),
                 false, val -> cameraDiffX = val.intValue()
         );
 
         cameraYField = TextFieldUtils.createNumericTextField(
-                yFieldX, yLabelY, 80, 40, camFont, UIColors.ACTIVE.toColor(), UIColors.ERROR.toColor(),
+                yFieldX, yLabelY, 80, 40, UI_FONT, UIColors.ACTIVE.toColor(), UIColors.ERROR.toColor(),
                 false, val -> cameraDiffY = val.intValue()
         );
 
         add(cameraXField);
+        ((RoundedTextField) cameraXField).setOffset(20, -50);
+        cameraSection.addElement((RoundedTextField) cameraXField);
+
         add(cameraYField);
+        ((RoundedTextField) cameraYField).setOffset(-70, 0);
+        cameraSection.addElement((RoundedTextField) cameraYField);
     }
 
     // ----------------------------
     // Buttons & Labels
     // ----------------------------
     private void setupButtons() {
-        int baseX = 1300;
-        int baseY = 50;
         int buttonType = Button.TYPE_ROUND;
+        int topSectionSize = 60;
 
-        createButton(baseX, baseY, 60, 60, 30, "", UIColors.STOP_RED.toColor(), buttonType,() ->  {
+        Button stopBtn = createButton(topSectionSize, topSectionSize, 30, "Stop Siumulation", pausePath, UIColors.STOP_RED.toColor(), buttonType,() ->  {
             isRunning = !isRunning;
-            Button b = buttons.get(0);
+            Button b = buttons.get(0); 
             b.setButtonColor(isRunning ? UIColors.STOP_RED.toColor() : UIColors.GO_GREEN.toColor());
-            b.setText(isRunning ? "STOP" : "START");
-
-            
+            b.setImg(isRunning ? pausePath: playPath);
         });
-        Button b = buttons.get(0);
-        b.setImg("src/pendulum/resources/blurredStopIcon.png");
+        buttonSection.addElement(stopBtn);
 
-        createButton(baseX + 150 + 20, baseY, 130, 60, 30, "Reset", UIColors.RESET.toColor(),  buttonType, () -> {
+        Button resetBtn = createButton(topSectionSize, topSectionSize,30, "Reset Simulation", resetPath ,UIColors.RESET.toColor(),  buttonType, () -> {
+            int lastBobX = 0, lastBobY = 0;
             for (int i = 0; i < pendulums.size(); i++) {
-                pendulums.get(i).reset();
-            } //TODO THIS CODE IS NOT WORKING CORRECTLY PENDULUMS RESET ONE BY ONE
+                Pendulum p = pendulums.get(i);
+                if (i > 0) {
+                    p.setPivotX(lastBobX);
+                    p.setPivotY(lastBobY);
+                }
+                p.reset();
+                
+                lastBobX = (int) p.getBobX();
+                lastBobY = (int) p.getBobY();
+            }
             trail.clear();
-            time = 0;
-            cameraDiffX = 0;
-            cameraDiffY = 0;
+            time = 0; cameraDiffX = 0; cameraDiffY = 0;
             if (cameraFollow) follow();
         });
-
-        createButton(baseX + 2 * (150 + 20), baseY, 130, 60, 30, "Follow", UIColors.FOLLOW.toColor(), buttonType, 
-                () -> cameraFollow = !cameraFollow);
-
-        createButton(baseX + 3 * (150 + 20), baseY, 130, 60, 30, "Trace", UIColors.TRACE.toColor(), buttonType, 
-                () -> tracing = !tracing);
-
-        createButton(baseX + 4 * (150 + 20), baseY, 130, 60, 30, "Arrow", UIColors.ARROW_BUTTON.toColor(), buttonType, 
-                () -> showArrow = !showArrow);
-
-
+        buttonSection.addElement(resetBtn);
+        
+        Button followBtn = createButton(topSectionSize, topSectionSize,30, "Follow Pendulum", followPath, UIColors.FOLLOW.toColor(), buttonType, 
+        () -> cameraFollow = !cameraFollow);
+        buttonSection.addElement(followBtn);
+        
+        buttonSection.nextRow();
+        
+        Button traceBtn = createButton(topSectionSize, topSectionSize,30, "Trace", tracePath, UIColors.TRACE.toColor(), buttonType, 
+        () -> tracing = !tracing);
+        buttonSection.addElement(traceBtn);
+        
+        
+        Button arrowBtn = createButton(topSectionSize, topSectionSize,30, "Arrow", arrowPath, UIColors.ARROW_BUTTON.toColor(), buttonType, 
+        () -> showArrow = !showArrow);
+        buttonSection.addElement(arrowBtn);
+        
+        
         //pendulum buttons
+        int pendelumSectionSize = 52;
 
-        createButton(yLabelX + 215 + 100 + 30 + 120 + 10, yLabelY, 60, 40, 20, "Prev", UIColors.PENDULUM_BUTTON.toColor(), 0, 
-                () -> {if (pendulumObserved > 1) pendulumObserved--;
-                    pendulumSetters = pendulumSetters(pendulumObserved);
+        Button prevBtn = createButton(pendelumSectionSize, pendelumSectionSize, 20, "Previous Pendulum", prevPath,UIColors.PENDULUM_BUTTON.toColor(), buttonType, 
+                () -> {if (selectedPendulum > 1) selectedPendulum--;
+                    pendulumSetters = pendulumSetters(selectedPendulum);
                 });
-        //magic number mess ylabelx + 215 just the original position, go by 100 + 30 to make gap + 120 + 10 to go past label and make gap, then 60 + 10 to make the next gap
-        createButton(yLabelX + 215 + 100 + 30 + 120 + 10 + 60 + 10, yLabelY, 60, 40, 20, "Next", UIColors.PENDULUM_BUTTON.toColor(), 0, 
-                () ->  {if (pendulumObserved < pendulums.size()) pendulumObserved++;
-                    pendulumSetters = pendulumSetters(pendulumObserved);
+
+        pendelumSection.addElement(prevBtn);
+
+        Button nextBtn = createButton(pendelumSectionSize, pendelumSectionSize, 20, "Next Pendulum", nextPath, UIColors.PENDULUM_BUTTON.toColor(), buttonType, 
+                () ->  {if (selectedPendulum < pendulums.size()) selectedPendulum++;
+                    pendulumSetters = pendulumSetters(selectedPendulum);
                 });
+        pendelumSection.addElement(nextBtn);
     }
 
     private Button createButton(int x, int y, int w, int h, int fontSize, String text, Color color, int buttonType, Runnable action) {
@@ -257,6 +313,15 @@ public final class PendulumPanel extends JPanel {
         buttons.add(btn);
         return btn;
     }
+
+    private Button createButton(int w, int h , int fontSize, String text, String imgPath, Color color, int buttonType, Runnable action) {
+        Button btn = new Button(0,0, w, h, text, color, buttonType, 3, fontSize);
+        btn.setImg(imgPath);
+        btn.setOnClick(action);
+        buttons.add(btn);
+        return btn;
+    }
+    
 
     private void setupTabButtons() {
         tabButtons.clear();
@@ -289,12 +354,36 @@ public final class PendulumPanel extends JPanel {
     }
 
     private void setupLabels() {
-        labels.add(new Label( 1300, 190, 300, 40, 22, Color.WHITE));
-        labels.add(new Label( xLabelX, xLabelY, 100, 40, 16, Color.WHITE));
-        labels.add(new Label( yLabelX, yLabelY, 100, 40, 16, Color.WHITE));
-        labels.add(new Label( yLabelX + 215, yLabelY, 100, 40, 16, Color.WHITE));//magic number with 215
-        labels.add(new Label( yLabelX + 215 + 100 + 30, yLabelY, 120, 40, 16, Color.WHITE));
+        Label elementLabel = new Label(1300, 190, 300, 40, 22, Color.WHITE, Label.TYPE_ROUND, 3);
+        labels.add(elementLabel);
+        
+        Label zoomLabel = new Label(yLabelX + LABEL_SPACING, yLabelY, 100, 40, 16, Color.WHITE, Label.TYPE_ROUND, 3);
+        cameraSection.addElement(zoomLabel);
+        cameraSection.nextRow();
+
+        inputSection.addElement(elementLabel);
+        
+        Label cameraXLabel = new Label(xLabelX, xLabelY, 100, 40, 16, Color.WHITE, Label.TYPE_ROUND, 3);
+        labels.add(cameraXLabel);
+        cameraSection.addElement(cameraXLabel);
+        cameraSection.nextRow();
+        
+        Label cameraYLabel = new Label(yLabelX, yLabelY, 100, 40, 16, Color.WHITE, Label.TYPE_ROUND, 3);
+        labels.add(cameraYLabel);
+        cameraSection.addElement(cameraYLabel);
+        
+        
+        labels.add(zoomLabel);
+        
+        // public Label(int x, int y, int width, int height, int fontSize, Color color, int labelType, int borderWidth, Color borderColor) {
+        Label pendulumLabel = new Label(0,0, 113, 40, 16, UIColors.LABEL_BACKGROUND.toColor(), Label.TYPE_ROUND, 3);
+        labels.add(pendulumLabel);
+
+        pendulumLabel.setOffset(0, 15);
+        pendelumSection.nextRow();
+        pendelumSection.addElement(pendulumLabel);
     }
+    
 
     private void updateLabelText() {
         for (int i = 0; i < labels.size(); i++) {
@@ -305,7 +394,7 @@ public final class PendulumPanel extends JPanel {
                 case 1 -> "X: " + cameraDiffX;
                 case 2 -> "Y: " + cameraDiffY;
                 case 3 -> "Zoom: " + (int)(zoom*100);
-                case 4 -> "Pendulum: " + pendulumObserved;
+                case 4 -> "Pendulum: " + selectedPendulum;
                 default -> "Label no Text";
             };
 
@@ -347,7 +436,7 @@ public final class PendulumPanel extends JPanel {
             }
             time += DELTA_TIME;
 
-            Pendulum p = pendulums.get(pendulumObserved-1);
+            Pendulum p = pendulums.get(selectedPendulum-1);
             trail.add(new TrailPoint(p.getBobX(),p.getBobY(), time)); // gets pendulum at the end of the list
             if (trail.size() > TRAIL_LIMIT) trail.remove(0);
         }
@@ -370,11 +459,29 @@ public final class PendulumPanel extends JPanel {
         drawBackground(g2);
         drawVignette(g2);
         drawSimulation(g2);
+
+        drawSections(g2);
+
         drawButtons(g2);
         drawDataSet(g2);
         drawLabels(g2);
         drawGraph(g2, graph);
-        drawSections(g2);
+        
+        drawPopUps(g2);
+
+        long now = System.nanoTime();
+        frameCount++;
+
+        if (now - lastFpsTime >= 1_000_000_000L) { // 1 second
+            currentFps = frameCount;
+            frameCount = 0;
+            lastFpsTime = now;
+        }
+
+        // Draw FPS text
+        g.setColor(Color.WHITE);
+        g.setFont(UI_FONT);
+        g.drawString("FPS: " + currentFps, 10, 20);
     }
 
     private void drawSections(Graphics2D g2) {
@@ -414,19 +521,26 @@ public final class PendulumPanel extends JPanel {
             if(i == 0){
                 pendulums.get(i).drawLine(g2, simCameraX, simCameraY, zoom);
             } else {
-                LastBobX = (int)(pendulums.get(i-1).getBobX());
-                LastBobY = (int)(pendulums.get(i-1).getBobY());
+                Pendulum previouusPendulum = pendulums.get(i-1);
+                LastBobX = (int)(previouusPendulum.getBobX());
+                LastBobY = (int)(previouusPendulum.getBobY());
                 pendulums.get(i).setPivotX(LastBobX);
                 pendulums.get(i).setPivotY(LastBobY);
                 pendulums.get(i).drawLine(g2, simCameraX, simCameraY, zoom);
             }
         }
         for(int i = 0; i < pendulums.size(); i++){
+
+            Color color = (i == selectedPendulum-1) ? UIColors.BOB_GREEN_COLOR.toColor() : UIColors.BOB_COLOR.toColor();
+            pendulums.get(i).setBobColor(color);
+
+
             if(i == 0){
                 pendulums.get(i).drawBob(g2, simCameraX, simCameraY, zoom);
             } else {
-                LastBobX = (int)(pendulums.get(i-1).getBobX());
-                LastBobY = (int)(pendulums.get(i-1).getBobY());
+                Pendulum previouusPendulum = pendulums.get(i-1);
+                LastBobX = (int)(previouusPendulum.getBobX());
+                LastBobY = (int)(previouusPendulum.getBobY());
                 pendulums.get(i).setPivotX(LastBobX);
                 pendulums.get(i).setPivotY(LastBobY);
                 pendulums.get(i).drawBob(g2, simCameraX, simCameraY, zoom);
@@ -454,7 +568,7 @@ public final class PendulumPanel extends JPanel {
     }
 
     private void drawArrow(Graphics2D g2) {
-        Pendulum p = pendulums.get(pendulumObserved-1);
+        Pendulum p = pendulums.get(selectedPendulum-1);
         Utils.drawArrow(g2, (int)(p.getBobX()*zoom)+simCameraX, (int)(p.getBobY()*zoom)+simCameraY, (int)(p.getVelocityX()*zoom*2), -(int)(p.getVelocityY()*zoom*2), 3, UIColors.ARROW.toColor());//multiply by 2 to make it more visible
     }
 
@@ -470,7 +584,16 @@ public final class PendulumPanel extends JPanel {
 
     private void drawGraph(Graphics2D g2, Graph graph) { graph.draw(g2); }
     
-    private void drawDataSet(Graphics g) { DataSet.drawDataSet(g, pendulums.get(pendulumObserved-1).getPendulumData()); }
+    private void drawDataSet(Graphics2D g2) { DataSet.drawDataSet(g2, pendulums.get(selectedPendulum-1).getPendulumData()); }
+
+    private void drawPopUps(Graphics2D g2) {
+        for (Button b : buttons) {
+            b.drawPopUp(g2);
+        }
+        for (Button b : tabButtons) {
+            b.drawPopUp(g2);
+        }
+    }
     
     // ----------------------------
     // Mouse & Camera handling
@@ -518,8 +641,9 @@ public final class PendulumPanel extends JPanel {
     }
 
     private void follow() {
-        simCameraX = -pendulum1.getBobX() + SIM_WIDTH / 2 + CORNER_X;
-        simCameraY = -pendulum1.getBobY() + SIM_HEIGHT / 2 + CORNER_Y;
+        Pendulum p = pendulums.get(selectedPendulum-1);
+        simCameraX = -p.getBobX() + SIM_WIDTH / 2 + CORNER_X;
+        simCameraY = -p.getBobY() + SIM_HEIGHT / 2 + CORNER_Y;
     }
 
 
@@ -573,4 +697,5 @@ public final class PendulumPanel extends JPanel {
         addMouseMotionListener(mouseHandler);
         addMouseWheelListener(mouseHandler);
     }
+
 }

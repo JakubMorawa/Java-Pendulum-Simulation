@@ -3,6 +3,8 @@ package pendulum;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import pendulum.uielements.UIColors;
+import pendulum.uielements.Utils;
 
 public class Pendulum {
 
@@ -18,6 +20,7 @@ public class Pendulum {
     private double angularVelocity;
     private double initialAngularVelocity;
     private double angularAcceleration;
+    private Color bobColor = UIColors.BOB_COLOR.toColor();
 
     private int bobX;
     private int bobY;
@@ -83,7 +86,7 @@ public class Pendulum {
                 scaledBobY - scaledRadiusOffset,
                 scaledDiameter,
                 scaledDiameter,
-                UIColors.BOB_COLOR.toColor(),
+                bobColor,
                 Color.BLACK,
                 (float) (2f * zoom)  // border width also scales (optional)
         );
@@ -95,7 +98,7 @@ public class Pendulum {
     public void reset() {
         angle = initialAngle;
         angularVelocity = initialAngularVelocity;
-        setBobPosition();
+        update(0);
     }
 
     // ----------------------------
@@ -156,4 +159,8 @@ public class Pendulum {
     public void setInitialAngle(double initialAngle) { this.initialAngle = initialAngle; }
     public void setAngularVelocity(double angularVelocity) { this.angularVelocity = angularVelocity; }
     public void setInitialAngularVelocity(double initialAngularVelocity) { this.initialAngularVelocity = initialAngularVelocity; }
+
+    public void setBobColor(Color color) {
+        bobColor = color;
+    }
 }
